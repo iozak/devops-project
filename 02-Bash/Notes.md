@@ -284,7 +284,7 @@ Another example. Checking if git is installed.
 ```
 #!/bin/bash
 
-command -v git 2>/dev/null # devnull is used to silent error messages
+command -v git 2>/dev/null # devnull is used to silence error messages
 
 if [[ $? -ne 0 ]]; then
     echo "git is not installed."
