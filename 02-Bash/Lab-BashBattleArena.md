@@ -33,7 +33,8 @@ do
         ((number++))
 done
 ```
-![[BashBattleArena-Level2.png]]
+![[BashBattleArena-Level02.png]]
+
 **Solved** - Multiple possible solutions. Can also use 'for i in {1..10}' 
 
 **Level 3: Conditional Statements**
@@ -47,7 +48,8 @@ else
         echo "Hero missing!"
 fi
 ```
-![[BashBattleArena-Level3.png]]
+![[BashBattleArena-Level03.png]]
+
 **Solved** - In this case we don't yet have a hero.txt file
 
 **Level 4: File Manipulation**
@@ -62,7 +64,9 @@ do
         cp "$f" /home/zak/Arena/backup/
 done
 ```
-![[BashBattleArena-Level4.png|537]]**Solved** - Confirmed creation of new folder Backup with txt files
+![[BashBattleArena-Level04.png|537]]
+
+**Solved** - Confirmed creation of new folder Backup with txt files
 
 **Level 5: The Boss Battle - Combining Basics**
 Mission: Combine what you've learned! Write a script that:
@@ -90,7 +94,8 @@ ls battlefield
 echo "Archive Contents"
 ls archive
 ```
-![[BashBattleArena-Level5.png]]
+![[BashBattleArena-Level05.png]]
+
 **Solved**
 
 **Level 6: Argument Parsing**
@@ -114,7 +119,9 @@ echo "Number of lines in the file: $count"
 
 fi
 ```
-![[BashBattleArena-Level6.png]]**Solved**
+![[BashBattleArena-Level06.png]]
+
+**Solved**
 
 **Level 7: File Sorting Script**
 Mission: Write a script that sorts all .txt files in a directory by their size, from smallest to largest, and displays the sorted list.
@@ -131,6 +138,95 @@ DIRECTORY="Arena"
 
 find "$DIRECTORY" -type f -name "*.sh" -printf "%s %p\n" | sort -n
 ```
-![[BashBattleArena-Level7.png]]
+![[BashBattleArena-Level07.png]]
 
 **Solved** - Used .sh in this case as files were already populated to have a size
+
+**Level 8: Multi-File Searcher**
+Mission: Create a script that searches for a specific word or phrase across all .log files in a directory and outputs the names of the files that contain the word or phrase.
+
+```
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <search_term> <directory>"
+    exit 1
+fi
+
+SEARCH_TERM="$1"
+DIRECTORY="$2"
+
+if [ ! -d "$DIRECTORY" ]; then
+    echo "Error: Directory '$DIRECTORY' does not exist."
+    exit 1
+fi
+
+if ! find "$DIRECTORY" -type f -name "*.log" | grep -q .; then
+    echo "Error: No .log files found in '$DIRECTORY'."
+    exit 1
+fi
+
+grep -rl --include="*.log" -- "$SEARCH_TERM" "$DIRECTORY" # 2>/dev/null
+```
+
+![[BashBattleArena-Level08.png]]
+
+**Solved**
+
+**Level 9: Script to Monitor Directory Changes**
+Mission: Write a script that monitors a directory for any changes (file creation, modification, or deletion) and logs the changes with a timestamp.
+
+```
+#!/bin/bash
+
+if [[ $# -ne 1 || ! -d "$1" ]]; then
+    echo "Usage: $0 <directory>"
+    exit 1
+fi
+
+inotifywait -m -r -e create,delete,modify,move "$1" |
+while read -r change; do
+    echo "$(date) $change" >> ../changes.log
+done
+```
+![[BashBattleArena-Level09.png]]
+
+**Solved** - inotify-tools install required. Could also add a check 'if ! command -v inotifywait'.
+'fswatch' can also be used.
+
+**Level 10: Boss Battle 2 - Intermediate Scripting**
+Mission: Write a script that:
+1. Creates a directory called Arena_Boss.
+2. Creates 5 text files inside the directory, named file1.txt to file5.txt.
+3. Generates a random number of lines (between 10 and 20) in each file.
+4. Sorts these files by their size and displays the list.
+5. Checks if any of the files contain the word 'Victory', and if found, moves the file to a directory called Victory_Archive.
+
+```
+#!/bin/bash
+
+mkdir -p Arena_Boss Victory_Archive
+
+for i in {1..5}; do
+    file="Arena_Boss/file$i.txt"
+    touch "$file"
+    lines=$((RANDOM % 11 + 10))
+    for ((j=1; j<=lines; j++)); do
+        echo "This is line $j" >> "$file"
+    done
+done
+
+echo "Files sorted by size:"
+find Arena_Boss -type f -printf "%s %f\n" | sort -n
+
+for file in Arena_Boss/*.txt; do
+    if grep -q "Victory" "$file"; then
+        mv "$file" Victory_Archive/
+        echo "$(basename "$file") moved to Victory_Archive."
+    fi
+done
+```
+
+![[BashBattleArena-Level10.png]]
+
+**Solved** - Ran script twice to be able to add word 'Victory' after 1st run so it moves on 2nd run.
