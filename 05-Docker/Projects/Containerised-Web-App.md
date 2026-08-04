@@ -71,11 +71,11 @@ docker build → Starts the image build process.
 
 Running the Container
 ```
-docker run -d -p 5002:5002 hello-flask
+docker run -d -p 5000:5000 hello-flask
 ```
 docker run → Creates and starts a container.
 -d → Runs the container in detached mode (background).
--p 5000:5000 → Maps port 5000 on the host machine to port 5002 inside the container.
+-p 5000:5000 → Maps port 5000 on the host machine to port 5000 inside the container.
 hello-flask → The Docker image being used.
 
 When executed, Docker returns a container ID, indicating the container is running.
@@ -146,7 +146,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install flask mysqlclient
 
-EXPOSE 5002
+EXPOSE 5000
 
 CMD ["python", "app.py"]
 ```
