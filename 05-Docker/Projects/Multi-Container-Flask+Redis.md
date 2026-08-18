@@ -1,0 +1,95 @@
+## Objective
+Create a multi-container application that consists of a simple Python Flask web application and a Redis database. The Flask application should use Redis to store and retrieve data.
+## Requirements
+1. **Flask Web Application**:
+    - A Flask app that has two routes:
+        - `/`: Displays a welcome message.
+        - `/count`: Increments and displays a visit count stored in Redis.
+2. **Redis Database**:
+    - Use Redis as a key-value store to keep track of the visit count.
+3. **Dockerize Both Services**:
+    - Create Dockerfiles for both the Flask app and Redis.
+    - Use Docker Compose to manage the multi-container application.
+## Bonus
+1. Persistent Storage for Redis: Configure Redis to use a volume to persist its data.
+2. Environment Variables: Modify the Flask application to read Redis connection details from environment variables and update the docker-compose.yml accordingly.
+3. Scaling the Application: Scale the Flask service to run multiple instances and load balance between them using Docker Compose.
+
+## Start
+```
+mkdir docker-challenge && cd docker-challenge
+```
+```
+touch app.py Dockerfile docker-compose.yml
+```
+
+**app.py (The Flask application)**
+Two routes added: '/' & '/count' - increment a counter stored in Redis.
+Connection details are read from environment variables.
+```
+from flask import Flask
+import redis
+
+app = Flask(__name__)
+
+cache = redis.Redis(host='redis', port=6379)
+
+@app.route('/')
+def welcome():
+    return 'Welcome to my project built using Docker, Flask & Redis'
+
+@app.route('/count')
+def count():
+    count = cache.incr('visits')
+    return f'This page has been visited {count} times.'
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+
+**Dockerfile**
+Single image build on python:3.14.6-slim. Copies the app in, installs the flask & redis libraries,
+Exposes the port and sets the start command.
+```
+FROM python:3.14.6-slim
+
+WORKDIR /app
+
+COPY . .
+
+RUN pip install flask redis
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+```
+
+**docker-compose.yml**
+Runs on one private network 'web (flask)'.
+```
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+```
+
+Then build the container
+```
+docker build -t hello-redis .
+```
+
+Run the container
+```
+docker run -d -p 5000:5000 hello-redis
+```
+
+**Result**
+Verified successful application and Redis connectivity. The root (/) page displays "Welcome to my project built using Docker, Flask & Redis", while the /count page displays "This page has been visited x times.". The visit counter increments correctly with each refresh, confirming Redis persistence and functionality.
