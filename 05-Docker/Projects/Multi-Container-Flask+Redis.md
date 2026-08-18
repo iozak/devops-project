@@ -93,3 +93,39 @@ docker run -d -p 5000:5000 hello-redis
 
 **Result**
 Verified successful application and Redis connectivity. The root (/) page displays "Welcome to my project built using Docker, Flask & Redis", while the /count page displays "This page has been visited x times.". The visit counter increments correctly with each refresh, confirming Redis persistence and functionality.
+
+## Bonus 1 - Persistent Storage
+Persistent Storage for Redis: Configure Redis to use a volume to persist its data.
+
+**Start**
+By default, the visit counter is stored only within the Redis container, meaning it resets whenever the container is removed and recreated. To ensure the data persists beyond the container's lifecycle, a named volume was mounted to Redis's data directory (/data). This allows Redis to store its data on persistent storage rather than within the container itself.
+
+The volume is defined once in the docker-compose.yml file and then mounted to the redisdb service. As a result, Redis can reload its saved data when the container starts, ensuring that the visit count is retained across container shutdowns, restarts, and redeployments.
+
+docker-compose.yml
+```
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+```
+
+```
+docker compose up
+```
+
+**Result**
+The solution was successfully verified by bringing the environment down and back up using Docker Compose. The counter resumed from its previous value, confirming that the Redis data persisted correctly within the configured volume.
