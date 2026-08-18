@@ -129,3 +129,68 @@ docker compose up
 
 **Result**
 The solution was successfully verified by bringing the environment down and back up using Docker Compose. The counter resumed from its previous value, confirming that the Redis data persisted correctly within the configured volume.
+
+## Bonus 2 - Environment Variables
+Modify the Flask application to read Redis connection details from environment variables and update the docker-compose.yml accordingly.
+
+**Start**
+Update the app.py (Flask Application). Replaced the Redis connection with environment variables.
+```
+from flask import Flask
+import redis
+import os
+
+app = Flask(__name__)
+
+cache = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'redis'),
+    port=int(os.getenv('REDIS_PORT', 6379))
+)
+
+@app.route('/')
+def welcome():
+    return 'Welcome to my project built using Docker, Flask & Redis'
+
+@app.route('/count')
+def count():
+    count = cache.incr('visits')
+    return f'This page has been visited {count} times.'
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+This configuration now uses:
+- REDIS_HOST for the Redis hostname.
+- REDIS_PORT for the Redis port.
+- Default values of redis and 6379 if the variables are not defined.
+
+Updated docker-compose.yml
+Added the environment variables to the Flask service:
+```
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:
+```
+
+Then rebuild the image and start as the flask application code changed.
+```
+docker compose up --build
+```
+
+**Result**
+The Redis connection configuration was decoupled from the application code by replacing hardcoded host and port values with environment variables. The Flask application now retrieves these settings using `os.getenv()`, with sensible defaults provided as a fallback. Corresponding variables were added to the `web` service in `docker-compose.yml`, enabling configuration changes without modifying the source code and aligning with containerisation best practices.
