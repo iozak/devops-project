@@ -194,3 +194,71 @@ docker compose up --build
 
 **Result**
 The Redis connection configuration was decoupled from the application code by replacing hardcoded host and port values with environment variables. The Flask application now retrieves these settings using `os.getenv()`, with sensible defaults provided as a fallback. Corresponding variables were added to the `web` service in `docker-compose.yml`, enabling configuration changes without modifying the source code and aligning with containerisation best practices.
+
+## Bonus 3 - Scaling the Application
+Scale the Flask service to run multiple instances and load balance between them using Docker Compose.
+
+**Start**
+Attempted to scales the flask service
+```
+docker compose up -d --scale web=3
+```
+This creates three instances of the Flask application (web) to improve scalability and distribute traffic across multiple containers. However, as expected this fails because each Flask container attempts to bind to the same host port:
+```
+ports:
+  - "5000:5000"
+```
+Multiple containers cannot bind to the same host port simultaneously.
+
+**Replace ports with expose in docker-compose.yml**
+```
+web:
+  build: .
+  expose:
+    - "5000"
+```
+expose makes port 5000 available only to other containers on the Docker network. Which will eliminate port conflicts & allow multiple flask containers to run simultaneously.
+
+**Add an NGINX Reverse Proxy**
+Add this service to docker-compose.yml:
+```
+nginx:
+  image: nginx:latest
+  ports:
+    - "5000:80"
+  volumes:
+    - ./nginx.conf:/etc/nginx/nginx.conf
+  depends_on:
+    - web
+```
+NGINX becomes the single entry point to the application, Instead of users connecting directly to Flask.
+traffic flows through: User --> NGINX --> Flask Containers
+This removes the need for each Flask container to expose a host port.
+
+**Create an NGINX Configuration File (nginx.conf)**
+```
+events {}
+
+http {
+    upstream flask_app {
+        server web:5000;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://flask_app;
+        }
+    }
+}
+```
+Defines a backend (flask_app), Routes requests to the Flask service, Routes requests to the Flask service, & Enables load balancing between multiple Flask instances.
+
+**Deploy the Scaled Environment**
+```
+docker compose up -d --build --scale web=3
+```
+
+**Result**
+The Flask application was successfully scaled from a single container to multiple instances using Docker Compose. To avoid host port conflicts, the Flask service was updated to use expose instead of ports. An NGINX reverse proxy was introduced to provide a single access point and distribute incoming requests across the Flask containers. This architecture improves application resilience, scalability, and availability while maintaining a shared Redis datastore for consistent data across all application instances.
